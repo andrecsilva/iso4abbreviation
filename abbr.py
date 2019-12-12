@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
 import sys
 import pytest
+from functools import reduce
 
 class Trie:
     """A simple implementation of a Trie without compression"""
@@ -13,8 +15,8 @@ class Trie:
         """Insert a path in the Trie composed of the key (a list) elements in sequence."""
         if(not key):
             if(self.data is not None):
-                print("Conflicting entries:")
-                print(self.data + ' ' + data)
+                pass
+                #print("Conflicting entries:")
             self.data = data
         else:
             h,*l = key
@@ -100,12 +102,15 @@ def abbreviate(wordList,prefixTrie,suffixTrie,lastWordTrie):
 
     #Check if w is the last word of some word sequence
     ct = lastWordTrie.search(w)[0]
-    if (ct is not None):
+    if (ct is not None and not l == []):
         #search for the longest suffix ending with w
         l.reverse()
         d, abbrv = ct.searchDeepest(l)
         l.reverse()
-        return abbreviate(l[:-d],prefixTrie,suffixTrie,lastWordTrie) +  [abbrv]
+        if abbrv == 'n.a.':
+            return abbreviate(l[:-d],prefixTrie,suffixTrie,lastWordTrie) + l[-d:] + [w]
+        else:
+            return abbreviate(l[:-d],prefixTrie,suffixTrie,lastWordTrie) +  [abbrv]
     else:
         return abbreviate(l,prefixTrie,suffixTrie,lastWordTrie) +  [abbreviateWord(w,prefixTrie,suffixTrie)]
     
@@ -196,9 +201,16 @@ def getTries():
             lastword = words.pop()
             if lastword.endswith('-'):
                 lastword = lastword[:-1] + '*'
-            ct = Trie()
-            ct.insert(words.reverse(),abbrv)
-            lwt.insert(lastword,lwt)
+            ct = lwt.search(lastword)[0]
+            words.reverse()
+            if ct is None:
+                ct = Trie()
+                ct.insert(words,abbrv)
+                lwt.insert(lastword,ct)
+            else:
+                ct.insert(words,abbrv)
+            words.reverse()
+
         else:
             #replaces - at the end of the words with * to not confuse with hyphenated words
             if word.endswith('-'):
@@ -215,3 +227,8 @@ def getTries():
 #example -> https://github.com/marcinwrochna/tokenzeroBot/blob/master/abbrevIsoBot/databases.py
 def msnParser():
     pass
+
+pt,st,lwt = getTries()
+
+s = abbreviate(sys.argv[1].split(),pt,st,lwt)
+print(reduce(lambda x,y: x+ ' ' + y,s))
