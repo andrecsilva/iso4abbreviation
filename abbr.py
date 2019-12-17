@@ -102,17 +102,18 @@ def abbreviate(wordList,prefixTrie,suffixTrie,lastWordTrie):
 
     #Check if w is the last word of some word sequence
     ct = lastWordTrie.search(w)[0]
-    if (ct is not None and not l == []):
-        #search for the longest suffix ending with w
+    if(ct is not None):
         l.reverse()
+        #search for the longest suffix ending with w
         d, abbrv = ct.searchDeepest(l)
         l.reverse()
-        if abbrv == 'n.a.':
-            return abbreviate(l[:-d],prefixTrie,suffixTrie,lastWordTrie) + l[-d:] + [w]
-        else:
-            return abbreviate(l[:-d],prefixTrie,suffixTrie,lastWordTrie) +  [abbrv]
-    else:
-        return abbreviate(l,prefixTrie,suffixTrie,lastWordTrie) +  [abbreviateWord(w,prefixTrie,suffixTrie)]
+        if (abbrv is not None):
+            if abbrv == 'n.a.':
+                return abbreviate(l[:-d],prefixTrie,suffixTrie,lastWordTrie) + l[-d:] + [w]
+            else:
+                return abbreviate(l[:-d],prefixTrie,suffixTrie,lastWordTrie) +  [abbrv]
+
+    return abbreviate(l,prefixTrie,suffixTrie,lastWordTrie) +  [abbreviateWord(w,prefixTrie,suffixTrie)]
     
 def test_abbreviate():
     pt = Trie()
@@ -230,5 +231,9 @@ def msnParser():
 
 pt,st,lwt = getTries()
 
-s = abbreviate(sys.argv[1].split(),pt,st,lwt)
-print(reduce(lambda x,y: x+ ' ' + y,s))
+for line in sys.stdin:
+    s = abbreviate(line.strip().split(),pt,st,lwt)
+    s = reduce(lambda x,y: x+ ' ' + y,s)
+    #TODO make this optional with a command line argument
+    print(s.title())
+
