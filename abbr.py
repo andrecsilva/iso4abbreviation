@@ -63,11 +63,11 @@ def cleanWord(word):
     """Clean a word. Removes explanations (e.g. 'Labor (work) -> Labor') and trims the leading/following whitespaces"""
     return word.split('(')[0].strip()
 
-
-#What if a word matches a suffix and prefix? e.g. Fairfield -> Fairfld. but -field -> -f. 
+#TODO Doesn't really support compound word without hyphens. Should be fine for english at least.
 def abbreviateWord(word,prefixTrie,suffixTrie):
     """Abbreviates a single word according to the prefix/suffix Tries. Words not included in LTWA are not abbreviated."""
     cword = cleanWord(word)
+
     pindex = sindex = None
     abbrev = None
 
@@ -88,6 +88,12 @@ def abbreviateWord(word,prefixTrie,suffixTrie):
             break
     if (sabbrev and sindex>0):
         return word[:sindex] + sabbrev
+
+    #Deals with composite hyphenated words AFTER it tries to abbreviate the whole word
+    if ('-' in cword):
+        lw = cword.split('-')
+        lw = [abbreviateWord(x,prefixTrie,suffixTrie) for x in lw]
+        return reduce(lambda x,y: x+'-'+y,lw)
 
     #No abbreviation -> returns word
     return word
@@ -114,6 +120,20 @@ def abbreviate(wordList,prefixTrie,suffixTrie,lastWordTrie):
                 return abbreviate(l[:-d],prefixTrie,suffixTrie,lastWordTrie) +  [abbrv]
 
     return abbreviate(l,prefixTrie,suffixTrie,lastWordTrie) +  [abbreviateWord(w,prefixTrie,suffixTrie)]
+
+def test_compound():
+    pt = Trie()
+    st = Trie()
+    lwt = Trie()
+
+    pt.insert('Haute-Corse', 'Ht.-Corse')
+    pt.insert('airplane', 'airpl.')
+    pt.insert('field', 'n.a.')
+    st.insert('ship', 'sh.')
+
+    s = ['airplane-airship-field-generator','Haute-Corse']
+    r = abbreviate(s,pt,st,lwt)
+    assert r == ['airpl.-airsh.-field-generator','Ht.-Corse']
     
 def test_abbreviate():
     pt = Trie()
@@ -232,8 +252,11 @@ def msnParser():
 pt,st,lwt = getTries()
 
 for line in sys.stdin:
-    s = abbreviate(line.strip().split(),pt,st,lwt)
-    s = reduce(lambda x,y: x+ ' ' + y,s)
+    s = line.strip().split()
+    #ISO4 does not abbreviate single word titles
+    if len(s)>1:
+        s = abbreviate(s,pt,st,lwt)
+        s = reduce(lambda x,y: x+ ' ' + y,s)
     #TODO make this optional with a command line argument
     print(s.title())
 
