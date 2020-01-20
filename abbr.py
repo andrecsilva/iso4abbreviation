@@ -195,8 +195,50 @@ def getLtwa():
 def cleanLtwa():
     pass
 
-#Remove forbidden words in ISO4 abbreviation (e.g. of)
-def removeForbidden():
+#For now, it has only some common english articles, conjunctjions and prepositions
+def removeForbidden(wordList):
+    """Removes articles, conjunctions and prepositions from a list of words. Starting prepositions are not removed"""
+
+    articles =[
+    'a',
+    'the',
+    'an'
+    ]
+
+    wordList =  [x for x in wordList if not (x.lower() in articles)]
+
+    conjunctions =[
+    'for',
+    'and',
+    'nor',
+    'but',
+    'or',
+    'yet',
+    'so',
+    'until',
+    'when',
+    'whenever',
+    'since'
+    ]
+
+    wordList =  [x for x in wordList if not (x.lower() in conjunctions)]
+
+    prepositions =[
+    'from',
+    'of',
+    'by',
+    'on',
+    'in',
+    'at'
+    ]
+
+    #By ISO4, starting prepositions are not removed
+    wordList =  [wordList[0]] + [x for x in wordList[1:] if not (x.lower() in prepositions)]
+
+    return wordList
+
+#Fix punctuation
+def fixPunctuation():
     pass
 
 def getTries():
@@ -256,6 +298,7 @@ for line in sys.stdin:
     #ISO4 does not abbreviate single word titles
     if len(s)>1:
         s = abbreviate(s,pt,st,lwt)
+        s = removeForbidden(s)
         s = reduce(lambda x,y: x+ ' ' + y,s)
     #TODO make this optional with a command line argument
     print(s.title())
