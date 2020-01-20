@@ -218,7 +218,8 @@ def removeForbidden(wordList):
     'until',
     'when',
     'whenever',
-    'since'
+    'since',
+    '&'
     ]
 
     wordList =  [x for x in wordList if not (x.lower() in conjunctions)]
@@ -291,15 +292,19 @@ def getTries():
 def msnParser():
     pass
 
-pt,st,lwt = getTries()
+def main():
+    pt,st,lwt = getTries()
 
-for line in sys.stdin:
-    s = line.strip().split()
-    #ISO4 does not abbreviate single word titles
-    if len(s)>1:
-        s = abbreviate(s,pt,st,lwt)
-        s = removeForbidden(s)
-        s = reduce(lambda x,y: x+ ' ' + y,s)
-    #TODO make this optional with a command line argument
-    print(s.title())
+    for line in sys.stdin:
+        s = line.strip().split()
+        #ISO4 does not abbreviate single word titles
+        if len(s)>1:
+            s = abbreviate(s,pt,st,lwt)
+            s = removeForbidden(s)
+            s = reduce(lambda x,y: x+ ' ' + y,s)
+        #TODO make this optional with a command line argument
+        print(s.title())
+
+if __name__ == "__main__":
+    main()
 
