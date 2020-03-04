@@ -28,14 +28,17 @@ class Trie:
     def search(self,key,depth=0):
         """Search if there's a path in key composed of the key's sequence of elements."""
         if (not key):
-            return self.data, depth
+            if '*' in self.children:
+                return self.children['*'].data, depth
+            else:
+                return self.data, depth
 
         h,*l = key
         h = h.lower()
         if ('*' in self.children):
-            return self.children['*'].data,depth
+            return self.children['*'].data, depth
         if (h in self.children):
-            return self.children[h].search(l,depth+1)
+            return self.children[h].search(l,depth)
         else:
             return None, None
 
