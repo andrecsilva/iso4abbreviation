@@ -1,128 +1,124 @@
 #!/usr/bin/env python3
 import sys
-import pytest
 from functools import reduce
 
 class Trie:
     """A simple implementation of a Trie without compression"""
 
-    def __init__(self,data=None):
-        self.data= data
+    def __init__(self, data=None):
+        self.data = data
         self.children = dict()
 
 
-    def insert(self,key,data):
+    def insert(self, key, data):
         """Insert a path in the Trie composed of the key (a list) elements in sequence."""
-        if(not key):
-            if(self.data is not None):
+        if not key:
+            if self.data is not None:
                 pass
                 #print("Conflicting entries:")
             self.data = data
         else:
-            h,*l = key
+            h, *l = key
             h = h.lower()
-            if (h not in self.children):
+            if h not in self.children:
                 self.children[h] = Trie()
-            self.children[h].insert(l,data)
+            self.children[h].insert(l, data)
 
-    def search(self,key,depth=0):
+    def search(self, key, depth=0):
         """Search if there's a path in key composed of the key's sequence of elements."""
-        if (not key):
+        if not key:
             if '*' in self.children:
                 return self.children['*'].data, depth
-            else:
-                return self.data, depth
+            return self.data, depth
 
-        h,*l = key
+        h, *l = key
         h = h.lower()
-        if ('*' in self.children):
+        if '*' in self.children:
             return self.children['*'].data, depth
-        if (h in self.children):
-            return self.children[h].search(l,depth)
-        else:
-            return None, None
+        if h in self.children:
+            return self.children[h].search(l, depth)
+        return None, None
 
-    def searchDeepest(self,key,depth=0,deepest=0,ddata=None):
+    def searchDeepest(self, key, depth=0, deepest=0, ddata=None):
         """Search the deepest data matching a prefix of key"""
-        if(self.data is not None):
-            ddata=self.data
-            deepest=depth
+        if self.data is not None:
+            ddata = self.data
+            deepest = depth
 
-        if (not key):
+        if not key:
             return depth, ddata
 
-        h,*l = key
+        h, *l = key
         h = h.lower()
 
-        if ('*' in self.children):
-            return self.children['*'].data,depth
+        if '*' in self.children:
+            return self.children['*'].data, depth
 
-        if (h in self.children):
-            return self.children[h].searchDeepest(l,depth+1,deepest,ddata)
-        else:
-            return deepest, ddata
+        if h in self.children:
+            return self.children[h].searchDeepest(l, depth+1, deepest, ddata)
+        return deepest, ddata
 
 def cleanWord(word):
-    """Clean a word. Removes explanations (e.g. 'Labor (work) -> Labor') and trims the leading/following whitespaces"""
+    """Clean a word. Removes explanations (e.g. 'Labor (work) -> Labor')
+    and trims the leading/following whitespaces"""
     return word.split('(')[0].strip()
 
 #TODO Doesn't really support compound word without hyphens. Should be fine for english at least.
-def abbreviateWord(word,prefixTrie,suffixTrie):
-    """Abbreviates a single word according to the prefix/suffix Tries. Words not included in LTWA are not abbreviated."""
+def abbreviateWord(word, prefixTrie, suffixTrie):
+    """Abbreviates a single word according to the prefix/suffix Tries.
+    Words not included in LTWA are not abbreviated."""
     cword = cleanWord(word)
 
-    pindex = sindex = None
-    abbrev = None
+    sindex = None
 
     #TODO does not differentiate between uppercase and lowercase (change?)
     pabbrev = prefixTrie.search(cword)[0]
-    
+
     #Prefixes take precedence over suffix patterns e.g. afield -> n.a.
-    if (pabbrev):
+    if pabbrev:
         if pabbrev == 'n.a.':
             return word
-        else:
-            return pabbrev
+        return pabbrev
 
     sindex = sabbrev = None
     for sindex in range(len(cword)):
         sabbrev = suffixTrie.search(cword[sindex:])[0]
-        if(sabbrev):
+        if sabbrev:
             break
-    if (sabbrev and sindex>0):
+    if (sabbrev and sindex > 0):
         return word[:sindex] + sabbrev
 
     #Deals with composite hyphenated words AFTER it tries to abbreviate the whole word
-    if ('-' in cword):
+    if '-' in cword:
         lw = cword.split('-')
-        lw = [abbreviateWord(x,prefixTrie,suffixTrie) for x in lw]
-        return reduce(lambda x,y: x+'-'+y,lw)
+        lw = [abbreviateWord(x, prefixTrie, suffixTrie) for x in lw]
+        return reduce(lambda x, y: x+'-'+y, lw)
 
     #No abbreviation -> returns word
     return word
 
-def abbreviate(wordList,prefixTrie,suffixTrie,lastWordTrie):
+def abbreviate(wordList, prefixTrie, suffixTrie, lastWordTrie):
     """Abbreviates a list of words using the prefix/suffix/lastWord Tries"""
-   
-    if (wordList == []):
+
+    if wordList == []:
         return []
 
-    *l,w = wordList
+    *l, w = wordList
 
     #Check if w is the last word of some word sequence
     ct = lastWordTrie.search(w)[0]
-    if(ct is not None):
+    if ct is not None:
         l.reverse()
         #search for the longest suffix ending with w
         d, abbrv = ct.searchDeepest(l)
         l.reverse()
-        if (abbrv is not None):
+        if abbrv is not None:
             if abbrv == 'n.a.':
-                return abbreviate(l[:-d],prefixTrie,suffixTrie,lastWordTrie) + l[-d:] + [w]
-            else:
-                return abbreviate(l[:-d],prefixTrie,suffixTrie,lastWordTrie) +  [abbrv]
+                return abbreviate(l[:-d], prefixTrie, suffixTrie, lastWordTrie) + l[-d:] + [w]
+            return abbreviate(l[:-d], prefixTrie, suffixTrie, lastWordTrie) +  [abbrv]
 
-    return abbreviate(l,prefixTrie,suffixTrie,lastWordTrie) +  [abbreviateWord(w,prefixTrie,suffixTrie)]
+    return abbreviate(l, prefixTrie, suffixTrie, lastWordTrie) +\
+           [abbreviateWord(w, prefixTrie, suffixTrie)]
 
 def test_compound():
     pt = Trie()
@@ -135,55 +131,57 @@ def test_compound():
     st.insert('ship', 'sh.')
 
     s = ['airplane-airship-field-generator','Haute-Corse']
-    r = abbreviate(s,pt,st,lwt)
-    assert r == ['airpl.-airsh.-field-generator','Ht.-Corse']
-    
+    r = abbreviate(s, pt, st, lwt)
+    assert r == ['airpl.-airsh.-field-generator', 'Ht.-Corse']
+
 def test_abbreviate():
     pt = Trie()
     st = Trie()
     lwt = Trie()
-    pt.insert('graph*','gr.')
-    pt.insert('Ciudad*','ciudad.')
-    pt.insert('labor','n.a.')
-    pt.insert('Labor','lab.')
-    pt.insert('laboratoir$','lab.')
-    pt.insert('Universit*','univ.')
-    pt.insert('Fairfield','Fairfld.')
-    pt.insert('afield','n.a.')
+    pt.insert('graph*', 'gr.')
+    pt.insert('Ciudad*', 'ciudad.')
+    pt.insert('labor', 'n.a.')
+    pt.insert('Labor', 'lab.')
+    pt.insert('laboratoir$', 'lab.')
+    pt.insert('Universit*', 'univ.')
+    pt.insert('Fairfield', 'Fairfld.')
+    pt.insert('afield', 'n.a.')
 
     wl = 'Ciudad real'.split()
-    *l , w = wl
+    *l, w = wl
 
     ct = Trie()
     l.reverse()
-    ct.insert(l,'Ciudad R.')
-    lwt.insert(w,ct)
+    ct.insert(l, 'Ciudad R.')
+    lwt.insert(w, ct)
 
     wl = 'United States of America'.split()
-    *l,w = wl
+    *l, w = wl
 
     ct = Trie()
     l.reverse()
-    ct.insert(l,'U. S. A.')
-    lwt.insert(w,ct)
+    ct.insert(l, 'U. S. A.')
+    lwt.insert(w, ct)
 
     wl = 'South Africa*'.split()
-    *l,w = wl
+    *l, w = wl
 
     ct = Trie()
     l.reverse()
-    ct.insert(l,'S. Afr.')
-    lwt.insert(w,ct)
+    ct.insert(l, 'S. Afr.')
+    lwt.insert(w, ct)
 
-    pt.insert('alcoholi*','alcohol.')
+    pt.insert('alcoholi*', 'alcohol.')
 
-    st.insert('plane','pl.')
-    st.insert('ship','sh.')
-    st.insert('field','f.')
+    st.insert('plane', 'pl.')
+    st.insert('ship', 'sh.')
+    st.insert('field', 'f.')
 
-    s = ['alcoholic','ship','airplane','united','states','of','america','south','africanism','afield','Fairfield']
+    s = ['alcoholic', 'ship', 'airplane', 'united', 'states', 'of',\
+            'america', 'south', 'africanism', 'afield', 'Fairfield']
 
-    assert abbreviate(s,pt,st,lwt) == ['alcohol.','ship','airpl.','U. S. A.','S. Afr.','afield','Fairfld.']
+    assert abbreviate(s, pt, st, lwt) == ['alcohol.', 'ship', 'airpl.',\
+            'U. S. A.', 'S. Afr.', 'afield', 'Fairfld.']
 
 def test_cleanword():
     assert cleanWord('Labor (work)') == 'Labor'
@@ -192,7 +190,7 @@ ltwaurl = ''
 
 #Open the ltwa file, downloads if either is does not exists or needs update
 def getLtwa():
-    return open('ltwa.txt','r')
+    return open('ltwa.txt', 'r')
 
 #Cleans problematic entries from the ltwa file
 def cleanLtwa():
@@ -200,44 +198,45 @@ def cleanLtwa():
 
 #For now, it has only some common english articles, conjunctjions and prepositions
 def removeForbidden(wordList):
-    """Removes articles, conjunctions and prepositions from a list of words. Starting prepositions are not removed"""
+    """Removes articles, conjunctions and prepositions from a list of words.
+    Starting prepositions are not removed"""
 
-    articles =[
-    'a',
-    'the',
-    'an'
+    articles = [
+        'a',
+        'the',
+        'an'
     ]
 
-    wordList =  [x for x in wordList if not (x.lower() in articles)]
+    wordList = [x for x in wordList if not x.lower() in articles]
 
-    conjunctions =[
-    'for',
-    'and',
-    'nor',
-    'but',
-    'or',
-    'yet',
-    'so',
-    'until',
-    'when',
-    'whenever',
-    'since',
-    '&'
+    conjunctions = [
+        'for',
+        'and',
+        'nor',
+        'but',
+        'or',
+        'yet',
+        'so',
+        'until',
+        'when',
+        'whenever',
+        'since',
+        '&'
     ]
 
-    wordList =  [x for x in wordList if not (x.lower() in conjunctions)]
+    wordList = [x for x in wordList if not x.lower() in conjunctions]
 
-    prepositions =[
-    'from',
-    'of',
-    'by',
-    'on',
-    'in',
-    'at'
+    prepositions = [
+        'from',
+        'of',
+        'by',
+        'on',
+        'in',
+        'at'
     ]
 
     #By ISO4, starting prepositions are not removed
-    wordList =  [wordList[0]] + [x for x in wordList[1:] if not (x.lower() in prepositions)]
+    wordList = [wordList[0]] + [x for x in wordList[1:] if not x.lower() in prepositions]
 
     return wordList
 
@@ -247,9 +246,14 @@ def fixPunctuation():
 
 def getTries():
     """ Parses the LTWA file and builds three Tries.
-        prefixTrie: A Trie built with all the prefixes and words (e.g. Yankee, alchoholic-). The data in the nodes are the abbreviation. (e.g. Yank., alchohol.)
-        suffixTrie: A Trie built with all the suffixes (e.g. -graph-, -field). The data in the nodes are the abbreviations (e.g. gr., fl.)
-        lastWordTrie: A Trie built with the last word from all the expressions with more than one word (e.g. Africa in South Africa-). The data in the nodes are the list of words in the rest of the expression in reverse order (e.g. ['of', 'States', 'United'] in United States of America)
+        prefixTrie: A Trie built with all the prefixes and words (e.g. Yankee, alchoholic-).
+        The data in the nodes are the abbreviation. (e.g. Yank., alchohol.)
+        suffixTrie: A Trie built with all the suffixes (e.g. -graph-, -field).
+        The data in the nodes are the abbreviations (e.g. gr., fl.)
+        lastWordTrie: A Trie built with the last word from all the expressions
+        with more than one word (e.g. Africa in South Africa-).
+        The data in the nodes are the list of words in the rest of the expression in reverse order
+        (e.g. ['of', 'States', 'United'] in United States of America)
     """
     file = getLtwa()
     #Skip first line with field names
@@ -259,12 +263,12 @@ def getTries():
     lwt = Trie()
 
     for line in file:
-        word,abbrv,lang = line.split('\t')
+        word, abbrv, lang = line.split('\t')
         word = cleanWord(word)
 
         words = word.split()
         #check if it is a compound expression
-        if len(words) >1:
+        if len(words) > 1:
             lastword = words.pop()
             if lastword.endswith('-'):
                 lastword = lastword[:-1] + '*'
@@ -272,10 +276,10 @@ def getTries():
             words.reverse()
             if ct is None:
                 ct = Trie()
-                ct.insert(words,abbrv)
-                lwt.insert(lastword,ct)
+                ct.insert(words, abbrv)
+                lwt.insert(lastword, ct)
             else:
-                ct.insert(words,abbrv)
+                ct.insert(words, abbrv)
             words.reverse()
 
         else:
@@ -283,11 +287,11 @@ def getTries():
             if word.endswith('-'):
                 word = word[:-1] + '*'
             if word.startswith('-'):
-                st.insert(word[1:],abbrv)
+                st.insert(word[1:], abbrv)
             else:
-                pt.insert(word,abbrv)
+                pt.insert(word, abbrv)
 
-    return pt,st,lwt
+    return pt, st, lwt
 
 
 #TODO cut pdf Mathscinet and get abbreviations
@@ -296,18 +300,17 @@ def msnParser():
     pass
 
 def main():
-    pt,st,lwt = getTries()
+    pt, st, lwt = getTries()
 
     for line in sys.stdin:
         s = line.strip().split()
         #ISO4 does not abbreviate single word titles
-        if len(s)>1:
-            s = abbreviate(s,pt,st,lwt)
+        if len(s) > 1:
+            s = abbreviate(s, pt, st, lwt)
             s = removeForbidden(s)
-            s = reduce(lambda x,y: x+ ' ' + y,s)
+            s = reduce(lambda x, y: x+ ' ' + y, s)
         #TODO make this optional with a command line argument
         print(s.title())
 
 if __name__ == "__main__":
     main()
-
