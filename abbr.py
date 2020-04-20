@@ -310,7 +310,9 @@ def main():
             s = removeForbidden(s)
             s = reduce(lambda x, y: x+ ' ' + y, s)
         #TODO make this optional with a command line argument
-        print(s.title())
+            print(s.title())
+        if len(s) ==1:
+            print(s[0])
 
 if __name__ == "__main__":
     main()
