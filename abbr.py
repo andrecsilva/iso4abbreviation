@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import sys
+import pickle
+import os
+import re
 from functools import reduce
 
 class Trie:
@@ -142,7 +145,6 @@ def test_abbreviate():
     pt.insert('Ciudad*', 'ciudad.')
     pt.insert('labor', 'n.a.')
     pt.insert('Labor', 'lab.')
-    pt.insert('laboratoir$', 'lab.')
     pt.insert('Universit*', 'univ.')
     pt.insert('Fairfield', 'Fairfld.')
     pt.insert('afield', 'n.a.')
@@ -186,11 +188,26 @@ def test_abbreviate():
 def test_cleanword():
     assert cleanWord('Labor (work)') == 'Labor'
 
+
+#TODO make it download automaticaly
 ltwaurl = ''
 
-#Open the ltwa file, downloads if either is does not exists or needs update
 def getLtwa():
-    return open('ltwa.txt', 'r')
+    """ Opens the latest LTWA file in the same directory """
+    p = re.compile(r'ltwa_\d+', re.IGNORECASE)
+    ls = os.listdir()
+    ltwa_path = sorted(filter(p.match, ls))
+    if len(ltwa_path) == 0:
+        print("No LTWA file in the directory.")
+    return ltwa_path[0]
+
+def getLtwaDate():
+    """ Returns the date of the lastest LTWA file in the same directory """
+    p = re.compile(r'ltwa_\d+', re.IGNORECASE)
+    ls = os.listdir()
+    ltwa_path = sorted(filter(p.match, ls))[0]
+    return int(ltwa_path.split('_')[1].split('.')[0])
+
 
 #Cleans problematic entries from the ltwa file
 def cleanLtwa():
@@ -245,6 +262,20 @@ def fixPunctuation():
     pass
 
 def getTries():
+    """Deserializes Tries built from LTWA. Build from LTWA if they do not exist."""
+    if os.path.isfile('tries.pkl'):
+        with open('tries.pkl','rb') as tries_pkl:
+            l = pickle.load(tries_pkl)
+            if l[0] >= getLtwaDate():
+                return l[1], l[2], l[3]
+    pt, st, lwt = buildTries()
+    with open('tries.pkl','wb') as tries_pkl:
+        pickle.dump([getLtwaDate(), pt, st, lwt], tries_pkl)
+    return pt, st, lwt
+
+
+
+def buildTries():
     """ Parses the LTWA file and builds three Tries.
         prefixTrie: A Trie built with all the prefixes and words (e.g. Yankee, alchoholic-).
         The data in the nodes are the abbreviation. (e.g. Yank., alchohol.)
@@ -255,41 +286,41 @@ def getTries():
         The data in the nodes are the list of words in the rest of the expression in reverse order
         (e.g. ['of', 'States', 'United'] in United States of America)
     """
-    file = getLtwa()
-    #Skip first line with field names
-    file.readline()
-    pt = Trie()
-    st = Trie()
-    lwt = Trie()
+    with open(getLtwa(),'r', encoding='utf-16_le') as ltwa_file:
+        #Skip first line with field names
+        ltwa_file.readline()
+        pt = Trie()
+        st = Trie()
+        lwt = Trie()
 
-    for line in file:
-        word, abbrv, lang = line.split('\t')
-        word = cleanWord(word)
+        for line in ltwa_file:
+            word, abbrv, lang = line.split('\t')
+            word = cleanWord(word)
 
-        words = word.split()
-        #check if it is a compound expression
-        if len(words) > 1:
-            lastword = words.pop()
-            if lastword.endswith('-'):
-                lastword = lastword[:-1] + '*'
-            ct = lwt.search(lastword)[0]
-            words.reverse()
-            if ct is None:
-                ct = Trie()
-                ct.insert(words, abbrv)
-                lwt.insert(lastword, ct)
+            words = word.split()
+            #check if it is a compound expression
+            if len(words) > 1:
+                lastword = words.pop()
+                if lastword.endswith('-'):
+                    lastword = lastword[:-1] + '*'
+                ct = lwt.search(lastword)[0]
+                words.reverse()
+                if ct is None:
+                    ct = Trie()
+                    ct.insert(words, abbrv)
+                    lwt.insert(lastword, ct)
+                else:
+                    ct.insert(words, abbrv)
+                words.reverse()
+
             else:
-                ct.insert(words, abbrv)
-            words.reverse()
-
-        else:
-            #replaces - at the end of the words with * to not confuse with hyphenated words
-            if word.endswith('-'):
-                word = word[:-1] + '*'
-            if word.startswith('-'):
-                st.insert(word[1:], abbrv)
-            else:
-                pt.insert(word, abbrv)
+                #replaces - at the end of the words with * to not confuse with hyphenated words
+                if word.endswith('-'):
+                    word = word[:-1] + '*'
+                if word.startswith('-'):
+                    st.insert(word[1:], abbrv)
+                else:
+                    pt.insert(word, abbrv)
 
     return pt, st, lwt
 
