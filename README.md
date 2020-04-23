@@ -6,7 +6,7 @@ I use it within Vim to organize my .bib files.
 
 # Usage Example
 
-Make sure you have the [List of Title Abbreviation Words - LTWA](http://www.issn.org/services/online-services/access-to-the-ltwa/) as ltwa\_<date>.txt in the same directory, where <date> is the build date of the LTWA file. Then:
+Make sure you have the [List of Title Abbreviation Words - LTWA](http://www.issn.org/services/online-services/access-to-the-ltwa/) as ltwa\_\<date\>.txt in the same directory, where \<date\> is the build date of the LTWA file. Then:
 
 ``` ./abbr.py < titles.txt ```
 
