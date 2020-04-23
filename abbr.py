@@ -26,6 +26,19 @@ class Trie:
             if h not in self.children:
                 self.children[h] = Trie()
             self.children[h].insert(l, data)
+            
+#non-recursive version, not really much faster
+#    def insert(self, key, data):
+#        """Insert a path in the Trie composed of the key (a list) elements in sequence."""
+#        root = self
+#        for c in key:
+#            cl = c.lower()
+#            if cl in root.children:
+#                root = root.children[cl]
+#            else:
+#                root.children[cl] = Trie()
+#                root = root.children[cl]
+#        root.data = data
 
     def search(self, key, depth=0):
         """Search if there's a path in key composed of the key's sequence of elements."""
@@ -264,12 +277,12 @@ def fixPunctuation():
 def getTries():
     """Deserializes Tries built from LTWA. Build from LTWA if they do not exist."""
     if os.path.isfile('tries.pkl'):
-        with open('tries.pkl','rb') as tries_pkl:
+        with open('tries.pkl', 'rb') as tries_pkl:
             l = pickle.load(tries_pkl)
             if l[0] >= getLtwaDate():
                 return l[1], l[2], l[3]
     pt, st, lwt = buildTries()
-    with open('tries.pkl','wb') as tries_pkl:
+    with open('tries.pkl', 'wb') as tries_pkl:
         pickle.dump([getLtwaDate(), pt, st, lwt], tries_pkl)
     return pt, st, lwt
 
@@ -286,7 +299,7 @@ def buildTries():
         The data in the nodes are the list of words in the rest of the expression in reverse order
         (e.g. ['of', 'States', 'United'] in United States of America)
     """
-    with open(getLtwa(),'r', encoding='utf-16_le') as ltwa_file:
+    with open(getLtwa(), 'r', encoding='utf-16_le') as ltwa_file:
         #Skip first line with field names
         ltwa_file.readline()
         pt = Trie()
@@ -330,20 +343,24 @@ def buildTries():
 def msnParser():
     pass
 
+def cleanAndAbbreviate(line,pt,st,lwt):
+    s = line.strip().split()
+    if len(s) > 1:
+        s = abbreviate(s, pt, st, lwt)
+        s = removeForbidden(s)
+        s = reduce(lambda x, y: x+ ' ' + y, s)
+        return s.title()
+    if len(s) == 1:
+        return s[0]
+    return ''
+
 def main():
     pt, st, lwt = getTries()
 
     for line in sys.stdin:
-        s = line.strip().split()
-        #ISO4 does not abbreviate single word titles
-        if len(s) > 1:
-            s = abbreviate(s, pt, st, lwt)
-            s = removeForbidden(s)
-            s = reduce(lambda x, y: x+ ' ' + y, s)
-        #TODO make this optional with a command line argument
-            print(s.title())
-        if len(s) ==1:
-            print(s[0])
+        s = cleanAndAbbreviate(line,pt,st,lwt)
+        if s is not '':
+            print(s)
 
 if __name__ == "__main__":
     main()
