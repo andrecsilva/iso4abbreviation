@@ -146,7 +146,7 @@ def test_compound():
     pt.insert('field', 'n.a.')
     st.insert('ship', 'sh.')
 
-    s = ['airplane-airship-field-generator','Haute-Corse']
+    s = ['airplane-airship-field-generator', 'Haute-Corse']
     r = abbreviate(s, pt, st, lwt)
     assert r == ['airpl.-airsh.-field-generator', 'Ht.-Corse']
 
@@ -205,21 +205,23 @@ def test_cleanword():
 #TODO make it download automaticaly
 ltwaurl = ''
 
-def getLtwa():
+def getLtwa(path='.'):
     """ Opens the latest LTWA file in the same directory """
     p = re.compile(r'ltwa_\d+', re.IGNORECASE)
-    ls = os.listdir()
+    ls = os.listdir(path)
     ltwa_path = sorted(filter(p.match, ls))
     if len(ltwa_path) == 0:
         print("No LTWA file in the directory.")
-    return ltwa_path[0]
+    return os.path.join(path, ltwa_path[0])
 
-def getLtwaDate():
+def getLtwaDate(path='.'):
     """ Returns the date of the lastest LTWA file in the same directory """
     p = re.compile(r'ltwa_\d+', re.IGNORECASE)
-    ls = os.listdir()
-    ltwa_path = sorted(filter(p.match, ls))[0]
-    return int(ltwa_path.split('_')[1].split('.')[0])
+    ls = os.listdir(path)
+    ltwa_path = sorted(filter(p.match, ls))
+    if len(ltwa_path) == 0:
+        print("No LTWA file in the directory.")
+    return int(ltwa_path[0].split('_')[1].split('.')[0])
 
 
 #Cleans problematic entries from the ltwa file
@@ -274,16 +276,17 @@ def removeForbidden(wordList):
 def fixPunctuation():
     pass
 
-def getTries():
+def getTries(path='.'):
     """Deserializes Tries built from LTWA. Build from LTWA if they do not exist."""
-    if os.path.isfile('tries.pkl'):
-        with open('tries.pkl', 'rb') as tries_pkl:
+    tries_path = os.path.join(path, 'tries.pkl')
+    if os.path.isfile(tries_path):
+        with open(tries_path, 'rb') as tries_pkl:
             l = pickle.load(tries_pkl)
-            if l[0] >= getLtwaDate():
+            if l[0] >= getLtwaDate(path):
                 return l[1], l[2], l[3]
     pt, st, lwt = buildTries()
-    with open('tries.pkl', 'wb') as tries_pkl:
-        pickle.dump([getLtwaDate(), pt, st, lwt], tries_pkl)
+    with open(tries_path, 'wb') as tries_pkl:
+        pickle.dump([getLtwaDate(path), pt, st, lwt], tries_pkl)
     return pt, st, lwt
 
 
@@ -343,7 +346,7 @@ def buildTries():
 def msnParser():
     pass
 
-def cleanAndAbbreviate(line,pt,st,lwt):
+def cleanAndAbbreviate(line, pt, st, lwt):
     s = line.strip().split()
     if len(s) > 1:
         s = abbreviate(s, pt, st, lwt)
@@ -358,7 +361,7 @@ def main():
     pt, st, lwt = getTries()
 
     for line in sys.stdin:
-        s = cleanAndAbbreviate(line,pt,st,lwt)
+        s = cleanAndAbbreviate(line, pt, st, lwt)
         if s is not '':
             print(s)
 
