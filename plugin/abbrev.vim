@@ -9,7 +9,6 @@ endif
 
 let s:path = expand('<sfile>:p:h' )
 let s:path = s:path . '/../python3'
-echom s:path
 
 py3 import vim
 py3 import os
