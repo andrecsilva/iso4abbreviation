@@ -7,16 +7,18 @@ if exists("g:loaded_iso4abbrev")
 	finish
 endif
 
-let s:path = expand('<sfile>:p:h' . '../python3')
+let s:path = expand('<sfile>:p:h' )
+let s:path = s:path . '/../python3'
+echom s:path
 
 py3 import vim
 py3 import os
 py3 from abbr import Trie
 py3 import abbr
-"Building the Tries are quite expensive, thus they are cached
+"Building the Tries is quite expensive. 
 py3 abbr_prefixTrie, abbr_suffixTrie, abbr_lastWordTrie = abbr.getTries(vim.eval('s:path'))
 
-"let g:loaded_iso4abbrev = 1
+let g:loaded_iso4abbrev = 1
 
 if !hasmapto(':set operatorfunc=<SID>Abbreviate<cr>g@')
 	nnoremap <unique> <leader>a :set operatorfunc=<SID>Abbreviate<cr>g@
