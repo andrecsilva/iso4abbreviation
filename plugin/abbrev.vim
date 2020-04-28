@@ -7,7 +7,7 @@ if exists("g:loaded_iso4abbrev")
 	finish
 endif
 
-let s:path = expand('<sfile>:p:h')
+let s:path = expand('<sfile>:p:h' . '../python3')
 
 py3 import vim
 py3 import os
