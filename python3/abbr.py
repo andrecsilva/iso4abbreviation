@@ -284,14 +284,14 @@ def getTries(path='.'):
             l = pickle.load(tries_pkl)
             if l[0] >= getLtwaDate(path):
                 return l[1], l[2], l[3]
-    pt, st, lwt = buildTries()
+    pt, st, lwt = buildTries(path)
     with open(tries_path, 'wb') as tries_pkl:
         pickle.dump([getLtwaDate(path), pt, st, lwt], tries_pkl)
     return pt, st, lwt
 
 
 
-def buildTries():
+def buildTries(path='.'):
     """ Parses the LTWA file and builds three Tries.
         prefixTrie: A Trie built with all the prefixes and words (e.g. Yankee, alchoholic-).
         The data in the nodes are the abbreviation. (e.g. Yank., alchohol.)
@@ -302,7 +302,7 @@ def buildTries():
         The data in the nodes are the list of words in the rest of the expression in reverse order
         (e.g. ['of', 'States', 'United'] in United States of America)
     """
-    with open(getLtwa(), 'r', encoding='utf-16_le') as ltwa_file:
+    with open(getLtwa(path), 'r', encoding='utf-16_le') as ltwa_file:
         #Skip first line with field names
         ltwa_file.readline()
         pt = Trie()
