@@ -215,13 +215,14 @@ def getLtwa(path='.'):
     return os.path.join(path, ltwa_path[0])
 
 def getLtwaDate(path='.'):
-    """ Returns the date of the lastest LTWA file in the same directory """
+    """ Returns the date of the lastest LTWA file in the same directory if it exists """
     p = re.compile(r'ltwa_\d+', re.IGNORECASE)
     ls = os.listdir(path)
     ltwa_path = sorted(filter(p.match, ls))
     if len(ltwa_path) == 0:
-        print("No LTWA file in the directory.")
-    return int(ltwa_path[0].split('_')[1].split('.')[0])
+        return 0
+    else:
+        return int(ltwa_path[0].split('_')[1].split('.')[0])
 
 
 #Cleans problematic entries from the ltwa file
@@ -277,7 +278,7 @@ def fixPunctuation():
     pass
 
 def getTries(path='.'):
-    """Deserializes Tries built from LTWA. Build from LTWA if they do not exist."""
+    """Deserializes Tries built from LTWA or build from LTWA if they do not exist."""
     tries_path = os.path.join(path, 'tries.pkl')
     if os.path.isfile(tries_path):
         with open(tries_path, 'rb') as tries_pkl:
