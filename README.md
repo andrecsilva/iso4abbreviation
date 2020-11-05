@@ -9,7 +9,7 @@ Useful to organize `.bib` files.
 Make sure you either have the [List of Title Abbreviation Words - LTWA](http://www.issn.org/services/online-services/access-to-the-ltwa/) as `LTWA\_\<date\>.txt`, where \<date\> is the build date of the LTWA file, or the tries.pkl file in the same directory. Then:
 
 ``` 
-	./abbr.py < titles.txt
+./abbr.py < titles.txt
 ```
 Remember to `chmod +x` the script if needed. The script will generate a tries.pkl file containing a serializaton of the abbreviations read from the LTWA file. If some some more recent LTWA file is in the same directory, the tries.pkl file will be rebuilt.
 
@@ -24,7 +24,7 @@ Requires Vim with +python3.
 Add the following to your `.vimrc`:
 
 ```
-	Plug andrecsilva/iso4abbreviation
+Plug andrecsilva/iso4abbreviation
 ```
 
 Or manually copy the plugin/python3 directories to the your `.vim` directory.

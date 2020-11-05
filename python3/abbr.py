@@ -74,8 +74,7 @@ class Trie:
             return self.children["*"].data, depth
 
         if h in self.children:
-            return self.children[h].\
-                    searchDeepest(list, depth + 1, deepest, ddata)
+            return self.children[h].searchDeepest(list, depth + 1, deepest, ddata)
         return deepest, ddata
 
 
@@ -144,8 +143,7 @@ def abbreviate(wordList, prefixTrie, suffixTrie, lastWordTrie):
                     + list[-d:]
                     + [w]
                 )
-            return abbreviate(list[:-d], prefixTrie, suffixTrie, lastWordTrie)\
-                + [abbrv]
+            return abbreviate(list[:-d], prefixTrie, suffixTrie, lastWordTrie) + [abbrv]
 
     return abbreviate(list, prefixTrie, suffixTrie, lastWordTrie) + [
         abbreviateWord(w, prefixTrie, suffixTrie)
@@ -253,8 +251,8 @@ def getLtwa(path="."):
 
 
 def getLtwaDate(path="."):
-    """ Returns the date of the lastest LTWA file
-    in the same directory if it exists """
+    """Returns the date of the lastest LTWA file
+    in the same directory if it exists"""
     p = re.compile(r"ltwa_\d+", re.IGNORECASE)
     ls = os.listdir(path)
     ltwa_path = sorted(filter(p.match, ls))
